@@ -1,4 +1,5 @@
 import numpy as np
+from scipy import ndimage
 from typing import Tuple, List
 from numpy import ndarray
 from scipy import interpolate
@@ -32,7 +33,7 @@ def get_left_right_bound(y: ndarray, px: float, left_crop: int) -> Tuple[int, in
     :return: left and right intersection
     """
     x = np.arange(0, len(y), 1, dtype=float)
-    y_inter = interpolate.interp1d(x, y)
+    y_inter = interpolate.interp1d(x, y, fill_value="extrapolate")
 
     px_i = px - left_crop
     py = y[px_i]
@@ -87,3 +88,15 @@ def get_local_slope(px_i: float, x: ndarray, y: ndarray, neighbor_points: int) -
     p_neigh_y = y[px_i - neighbor_points:px_i + neighbor_points]
     slope, intercept, r, p, se = linregress(p_neigh_x, p_neigh_y)
     return slope
+
+
+def prep_data(data, column, s=1, trim=None):
+    y = data[:, column]
+    if trim:
+        y = y[trim[0]: trim[1]]
+    x = np.arange(0, len(y))
+    y = np.nan_to_num(y, copy=True)
+    spline = interpolate.UnivariateSpline(x, y, s=s)
+    y = spline(x)
+
+    return y
